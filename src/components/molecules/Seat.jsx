@@ -14,17 +14,27 @@ const Seat = ({
     }
   };
 
-  const getSeatClass = () => {
+const getSeatClass = () => {
     if (disabled || seat.status === "occupied") {
       return "seat-occupied";
     }
     if (isSelected) {
       return "seat-selected";
     }
-    if (seat.type === "vip") {
-      return "seat-vip";
-    }
     return "seat-available";
+  };
+
+  const getSeatStyle = () => {
+    if (disabled || seat.status === "occupied") {
+      return {};
+    }
+    if (isSelected) {
+      return {};
+    }
+    if (seat.zoneColor) {
+      return { backgroundColor: seat.zoneColor };
+    }
+    return {};
   };
 
   const sizeClasses = {
@@ -33,7 +43,7 @@ const Seat = ({
     large: "w-8 h-8 text-sm"
   };
 
-  return (
+return (
     <div
       className={cn(
         "rounded-sm flex items-center justify-center font-medium border border-white/20",
@@ -41,8 +51,9 @@ const Seat = ({
         sizeClasses[size],
         disabled ? "cursor-not-allowed" : "cursor-pointer"
       )}
+      style={getSeatStyle()}
       onClick={handleClick}
-title={`Seat ${seat.number} - ${seat.row} - ${seat.zone || 'No Zone'} - $${seat.price || 0}`}
+      title={`Seat ${seat.number} - ${seat.row} - ${seat.zone || 'No Zone'} - $${seat.price || 0}`}
     >
       {seat.number}
     </div>

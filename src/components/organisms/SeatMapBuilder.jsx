@@ -14,7 +14,14 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
   const [zones, setZones] = useState([]);
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(false);
-const [currentZone, setCurrentZone] = useState(null);
+  const [currentZone, setCurrentZone] = useState(null);
+  const [showZoneModal, setShowZoneModal] = useState(false);
+  const [editingZone, setEditingZone] = useState(null);
+  const [zoneFormData, setZoneFormData] = useState({
+    name: "",
+    color: "#10b981",
+    price: 50
+  });
   const canvasRef = useRef(null);
 
   // Load zones and seats when seatMap changes
@@ -52,13 +59,13 @@ const [currentZone, setCurrentZone] = useState(null);
     }
   };
 
-  const tools = [
+const tools = [
     { id: "seat", name: "Add Seat", icon: "Square" },
     { id: "row", name: "Add Row", icon: "Grid3X3" },
+    { id: "zone", name: "Zone Paint", icon: "Palette" },
     { id: "select", name: "Select", icon: "MousePointer" },
     { id: "delete", name: "Delete", icon: "Trash2" }
   ];
-
   const handleCanvasClick = (e) => {
     if (readOnly) return;
 
@@ -82,7 +89,7 @@ if (selectedTool === "seat" && currentZone) {
     }
   };
 
-  const handleSeatClick = (seat) => {
+const handleSeatClick = (seat) => {
     if (selectedTool === "select") {
       setSelectedSeats(prev => 
         prev.includes(seat.id) 
@@ -91,9 +98,15 @@ if (selectedTool === "seat" && currentZone) {
       );
     } else if (selectedTool === "delete") {
       setSeats(prev => prev.filter(s => s.id !== seat.id));
+    } else if (selectedTool === "zone" && currentZone) {
+      // Update seat's zone assignment
+      setSeats(prev => prev.map(s => 
+        s.id === seat.id 
+          ? { ...s, zoneId: currentZone }
+          : s
+      ));
     }
   };
-
 const generateRow = () => {
     if (readOnly || !currentZone) return;
 
@@ -117,12 +130,77 @@ const generateRow = () => {
     setSeats([...seats, ...newSeats]);
   };
 
-const handleSave = async () => {
+const handleCreateZone = () => {
+    setEditingZone(null);
+    setZoneFormData({
+      name: "",
+      color: "#10b981",
+      price: 50
+    });
+    setShowZoneModal(true);
+  };
+
+  const handleEditZone = (zone) => {
+    setEditingZone(zone);
+    setZoneFormData({
+      name: zone.name,
+      color: zone.color,
+      price: zone.price
+    });
+    setShowZoneModal(true);
+  };
+
+  const handleDeleteZone = (zoneId) => {
+    if (window.confirm("Are you sure you want to delete this zone? All seats in this zone will be reassigned to the first available zone.")) {
+      const remainingZones = zones.filter(z => z.id !== zoneId);
+      const fallbackZoneId = remainingZones[0]?.id || null;
+      
+      // Reassign seats to fallback zone
+      setSeats(prev => prev.map(seat => 
+        seat.zoneId === zoneId 
+          ? { ...seat, zoneId: fallbackZoneId }
+          : seat
+      ));
+      
+      setZones(remainingZones);
+      
+      if (currentZone === zoneId) {
+        setCurrentZone(fallbackZoneId);
+      }
+    }
+  };
+
+  const handleZoneFormSubmit = () => {
+    if (!zoneFormData.name.trim()) {
+      alert("Please enter a zone name");
+      return;
+    }
+
+    if (editingZone) {
+      // Update existing zone
+      setZones(prev => prev.map(zone => 
+        zone.id === editingZone.id 
+          ? { ...zone, ...zoneFormData }
+          : zone
+      ));
+    } else {
+      // Create new zone
+      const newZone = {
+        id: Date.now(),
+        ...zoneFormData
+      };
+      setZones(prev => [...prev, newZone]);
+      setCurrentZone(newZone.id);
+    }
+    
+    setShowZoneModal(false);
+  };
+
+  const handleSave = async () => {
     if (onSave) {
       await onSave({ zones, seats });
     }
   };
-
   return (
     <div className="space-y-6">
       {!readOnly && (
@@ -149,6 +227,49 @@ const handleSave = async () => {
             </div>
 
 <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Zone Management</label>
+              <div className="space-y-2 mb-4">
+                {zones.map((zone) => (
+                  <div key={zone.id} className="flex items-center justify-between p-2 bg-gray-800 rounded">
+                    <div className="flex items-center space-x-2">
+                      <div 
+                        className="w-4 h-4 rounded" 
+                        style={{ backgroundColor: zone.color }}
+                      ></div>
+                      <span className="text-sm text-white">{zone.name}</span>
+                      <span className="text-xs text-gray-400">${zone.price}</span>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditZone(zone)}
+                        className="p-1"
+                      >
+                        <ApperIcon name="Edit2" className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteZone(zone.id)}
+                        className="p-1 text-red-400 hover:text-red-300"
+                      >
+                        <ApperIcon name="Trash2" className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={handleCreateZone}
+                className="w-full mb-4"
+              >
+                <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
+                Add Zone
+              </Button>
+              
               <label className="block text-sm font-medium text-gray-300 mb-2">Current Zone</label>
               <Select
                 value={currentZone || ""}
@@ -201,18 +322,19 @@ const handleSave = async () => {
         </Card>
       )}
 
-      <Card className="p-6">
+<Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Seat Map Preview</h3>
           <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-              <span className="text-gray-400">Available</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
-              <span className="text-gray-400">VIP</span>
-            </div>
+            {zones.map((zone) => (
+              <div key={zone.id} className="flex items-center">
+                <div 
+                  className="w-4 h-4 rounded mr-2" 
+                  style={{ backgroundColor: zone.color }}
+                ></div>
+                <span className="text-gray-400">{zone.name} (${zone.price})</span>
+              </div>
+            ))}
             <div className="flex items-center">
               <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
               <span className="text-gray-400">Occupied</span>
@@ -234,12 +356,13 @@ const handleSave = async () => {
             </div>
           ) : (
             <>
-              {seats.map((seat) => {
+{seats.map((seat) => {
                 const zone = zones.find(z => z.id === seat.zoneId);
                 const seatWithZone = {
                   ...seat,
                   zone: zone?.name || "Unknown Zone",
-                  price: zone?.price || 0
+                  price: zone?.price || 0,
+                  zoneColor: zone?.color || "#10b981"
                 };
                 
                 return (
@@ -274,7 +397,96 @@ const handleSave = async () => {
           <p>Total Seats: {seats.length}</p>
           <p>Selected: {selectedSeats.length}</p>
         </div>
-      </Card>
+</Card>
+
+      {/* Zone Management Modal */}
+      {showZoneModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                {editingZone ? "Edit Zone" : "Create Zone"}
+              </h3>
+              <Button variant="ghost" onClick={() => setShowZoneModal(false)}>
+                <ApperIcon name="X" className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Zone Name
+                </label>
+                <Input
+                  value={zoneFormData.name}
+                  onChange={(e) => setZoneFormData(prev => ({
+                    ...prev,
+                    name: e.target.value
+                  }))}
+                  placeholder="Enter zone name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Zone Color
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    value={zoneFormData.color}
+                    onChange={(e) => setZoneFormData(prev => ({
+                      ...prev,
+                      color: e.target.value
+                    }))}
+                    className="w-12 h-10 border border-gray-600 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={zoneFormData.color}
+                    onChange={(e) => setZoneFormData(prev => ({
+                      ...prev,
+                      color: e.target.value
+                    }))}
+                    placeholder="#ffffff"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Base Price ($)
+                </label>
+                <Input
+                  type="number"
+                  value={zoneFormData.price}
+                  onChange={(e) => setZoneFormData(prev => ({
+                    ...prev,
+                    price: parseFloat(e.target.value) || 0
+                  }))}
+                  placeholder="Enter base price"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4 mt-6">
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowZoneModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleZoneFormSubmit}
+              >
+                {editingZone ? "Update Zone" : "Create Zone"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
