@@ -291,37 +291,45 @@ const filteredSeatMaps = seatMaps.filter(map =>
             icon="Grid3X3"
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSeatMaps.map((seatMap) => (
-              <Card key={seatMap.Id} className="p-6 hover:scale-[1.02] transition-transform duration-300">
+              <Card key={seatMap.Id} className="p-6 hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-surface to-surface-light border-gray-700 hover:border-gray-600 group">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">{seatMap.name}</h3>
-                    <div className="space-y-2 mb-4">
+                    <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-primary-300 transition-colors">
+                      {seatMap.name}
+                    </h3>
+                    <div className="space-y-3 mb-4">
                       <div className="flex items-center text-gray-400 text-sm">
-                        <ApperIcon name="Building" className="w-4 h-4 mr-2" />
-                        {seatMap.venueId ? getVenueName(seatMap.venueId) : "Template"}
-                      </div>
-<div className="flex items-center text-gray-400 text-sm">
-                        <ApperIcon name="Grid3X3" className="w-4 h-4 mr-2" />
-                        {seatMap.totalSeats || 0} seats
+                        <ApperIcon name="Building" className="w-4 h-4 mr-2 text-blue-400" />
+                        <span className="font-medium">
+                          {seatMap.venueId ? getVenueName(seatMap.venueId) : "Template"}
+                        </span>
                       </div>
                       <div className="flex items-center text-gray-400 text-sm">
-                        <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
-                        {seatMap.totalZones || 0} zones
+                        <ApperIcon name="Grid3X3" className="w-4 h-4 mr-2 text-green-400" />
+                        <span className="font-medium">{seatMap.totalSeats || 0} seats</span>
+                      </div>
+                      <div className="flex items-center text-gray-400 text-sm">
+                        <ApperIcon name="MapPin" className="w-4 h-4 mr-2 text-purple-400" />
+                        <span className="font-medium">{seatMap.totalZones || 0} zones</span>
                       </div>
                     </div>
                     
-<div className="flex flex-wrap gap-1 mb-4">
-                       {seatMap.isTemplate && (
-                         <Badge variant="accent">Template</Badge>
-                       )}
-                       {seatMap.dimensions && (
-                         <Badge variant="secondary" className="text-xs">
-                           {seatMap.dimensions}
-                         </Badge>
-                       )}
-                     </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {seatMap.isTemplate && (
+                        <Badge variant="accent" className="text-xs font-medium">
+                          <ApperIcon name="Template" className="w-3 h-3 mr-1" />
+                          Template
+                        </Badge>
+                      )}
+                      {seatMap.dimensions && (
+                        <Badge variant="secondary" className="text-xs font-medium">
+                          <ApperIcon name="Maximize" className="w-3 h-3 mr-1" />
+                          {seatMap.dimensions}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -330,7 +338,7 @@ const filteredSeatMaps = seatMaps.filter(map =>
                     variant="primary" 
                     size="sm" 
                     onClick={() => handleViewSeatMap(seatMap)}
-                    className="flex-1"
+                    className="flex-1 transform hover:scale-105 transition-all duration-200"
                   >
                     <ApperIcon name="Eye" className="w-4 h-4 mr-2" />
                     View
@@ -339,6 +347,7 @@ const filteredSeatMaps = seatMaps.filter(map =>
                     variant="secondary" 
                     size="sm" 
                     onClick={() => handleEditSeatMap(seatMap)}
+                    className="transform hover:scale-105 transition-all duration-200"
                   >
                     <ApperIcon name="Edit" className="w-4 h-4" />
                   </Button>
@@ -346,6 +355,7 @@ const filteredSeatMaps = seatMaps.filter(map =>
                     variant="danger" 
                     size="sm" 
                     onClick={() => handleDeleteSeatMap(seatMap)}
+                    className="transform hover:scale-105 transition-all duration-200"
                   >
                     <ApperIcon name="Trash2" className="w-4 h-4" />
                   </Button>
@@ -356,29 +366,28 @@ const filteredSeatMaps = seatMaps.filter(map =>
         )}
 
         {/* Summary */}
-        {filteredSeatMaps.length > 0 && (
-          <div className="bg-surface rounded-xl p-6 border border-gray-700">
+{filteredSeatMaps.length > 0 && (
+          <div className="bg-gradient-to-r from-surface via-surface-light to-surface rounded-xl p-6 border border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div>
-                <p className="text-2xl font-bold text-white">{filteredSeatMaps.length}</p>
-                <p className="text-sm text-gray-400">Total Maps</p>
+              <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <p className="text-3xl font-bold text-white mb-2">{filteredSeatMaps.length}</p>
+                <p className="text-sm text-gray-400 font-medium">Total Maps</p>
               </div>
-<div>
-                <p className="text-2xl font-bold text-primary-400">
+              <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <p className="text-3xl font-bold text-primary-400 mb-2">
                   {filteredSeatMaps.reduce((sum, map) => sum + (map.totalSeats || 0), 0)}
                 </p>
-                <p className="text-sm text-gray-400">Total Seats</p>
+                <p className="text-sm text-gray-400 font-medium">Total Seats</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-accent-400">
+              <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <p className="text-3xl font-bold text-accent-400 mb-2">
                   {filteredSeatMaps.filter(map => map.isTemplate).length}
                 </p>
-                <p className="text-sm text-gray-400">Templates</p>
+                <p className="text-sm text-gray-400 font-medium">Templates</p>
               </div>
             </div>
           </div>
         )}
-
         {/* Seat Map Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

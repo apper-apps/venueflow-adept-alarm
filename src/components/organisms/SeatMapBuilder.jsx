@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ApperIcon from "@/components/ApperIcon";
+import Empty from "@/components/ui/Empty";
 import Loading from "@/components/ui/Loading";
 import Seat from "@/components/molecules/Seat";
 import Card from "@/components/atoms/Card";
@@ -418,23 +419,33 @@ URL.revokeObjectURL(url);
       alert('Failed to export seat map data');
     }
   };
-  return (
+return (
     <div className="space-y-6">
       {!readOnly && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Seat Map Builder</h3>
+        <Card className="p-6 bg-gradient-to-br from-surface to-surface-light border-gray-700 transition-all duration-300">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <ApperIcon name="Hammer" className="w-5 h-5 mr-2 text-primary-400" />
+            Seat Map Builder
+          </h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Tools</label>
-              <div className="space-y-2">
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                <ApperIcon name="Wrench" className="w-4 h-4 mr-2" />
+                Tools
+              </label>
+              <div className="grid grid-cols-1 gap-2">
                 {tools.map((tool) => (
                   <Button
                     key={tool.id}
                     variant={selectedTool === tool.id ? "primary" : "secondary"}
                     size="sm"
                     onClick={() => setSelectedTool(tool.id)}
-                    className="w-full justify-start"
+                    className={`w-full justify-start transition-all duration-200 transform hover:scale-105 ${
+                      selectedTool === tool.id 
+                        ? 'ring-2 ring-primary-400 shadow-lg' 
+                        : 'hover:bg-gray-600'
+                    }`}
                   >
                     <ApperIcon name={tool.icon} className="w-4 h-4 mr-2" />
                     {tool.name}
@@ -443,25 +454,30 @@ URL.revokeObjectURL(url);
               </div>
             </div>
 
-<div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Zone Management</label>
-              <div className="space-y-2 mb-4">
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
+                Zone Management
+              </label>
+              <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
                 {zones.map((zone) => (
-                  <div key={zone.id} className="flex items-center justify-between p-2 bg-gray-800 rounded">
-                    <div className="flex items-center space-x-2">
+                  <div key={zone.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-all duration-200">
+                    <div className="flex items-center space-x-3">
                       <div 
-                        className="w-4 h-4 rounded" 
+                        className="w-5 h-5 rounded-full border-2 border-white/20 shadow-lg" 
                         style={{ backgroundColor: zone.color }}
                       ></div>
-                      <span className="text-sm text-white">{zone.name}</span>
-                      <span className="text-xs text-gray-400">${zone.price}</span>
+                      <div>
+                        <span className="text-sm font-medium text-white">{zone.name}</span>
+                        <span className="text-xs text-gray-400 ml-2">${zone.price}</span>
+                      </div>
                     </div>
                     <div className="flex space-x-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditZone(zone)}
-                        className="p-1"
+                        className="p-1 hover:bg-gray-700 transition-colors"
                       >
                         <ApperIcon name="Edit2" className="w-3 h-3" />
                       </Button>
@@ -469,7 +485,7 @@ URL.revokeObjectURL(url);
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteZone(zone.id)}
-                        className="p-1 text-red-400 hover:text-red-300"
+                        className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
                       >
                         <ApperIcon name="Trash2" className="w-3 h-3" />
                       </Button>
@@ -481,7 +497,7 @@ URL.revokeObjectURL(url);
                 variant="accent"
                 size="sm"
                 onClick={handleCreateZone}
-                className="w-full mb-4"
+                className="w-full mb-4 transform hover:scale-105 transition-all duration-200"
               >
                 <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
                 Add Zone
@@ -492,6 +508,7 @@ URL.revokeObjectURL(url);
                 value={currentZone || ""}
                 onChange={(e) => setCurrentZone(parseInt(e.target.value))}
                 disabled={zones.length === 0}
+                className="transition-all duration-200"
               >
                 {zones.length === 0 ? (
                   <option value="">No zones available</option>
@@ -507,20 +524,23 @@ URL.revokeObjectURL(url);
                 variant="accent"
                 size="sm"
                 onClick={generateRow}
-                className="w-full mt-2"
+                className="w-full mt-2 transform hover:scale-105 transition-all duration-200"
               >
                 <ApperIcon name="Plus" className="w-4 h-4 mr-2" />
                 Generate Row
               </Button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Actions</label>
-<div className="space-y-2">
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                <ApperIcon name="Zap" className="w-4 h-4 mr-2" />
+                Actions
+              </label>
+              <div className="space-y-2">
                 <Button
                   variant="primary"
                   onClick={handleSave}
-                  className="w-full"
+                  className="w-full transform hover:scale-105 transition-all duration-200"
                 >
                   <ApperIcon name="Save" className="w-4 h-4 mr-2" />
                   Save Map
@@ -528,7 +548,7 @@ URL.revokeObjectURL(url);
                 <Button
                   variant="accent"
                   onClick={handleExportJSON}
-                  className="w-full"
+                  className="w-full transform hover:scale-105 transition-all duration-200"
                 >
                   <ApperIcon name="Download" className="w-4 h-4 mr-2" />
                   Export JSON
@@ -536,7 +556,7 @@ URL.revokeObjectURL(url);
                 <Button
                   variant="secondary"
                   onClick={() => setSeats([])}
-                  className="w-full"
+                  className="w-full transform hover:scale-105 transition-all duration-200"
                 >
                   <ApperIcon name="RotateCcw" className="w-4 h-4 mr-2" />
                   Clear All
@@ -547,40 +567,52 @@ URL.revokeObjectURL(url);
         </Card>
       )}
 
-<Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Seat Map Preview</h3>
+<Card className="p-6 bg-gradient-to-br from-surface to-surface-light border-gray-700 transition-all duration-300">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <ApperIcon name="Layout" className="w-5 h-5 mr-2 text-primary-400" />
+            Seat Map Preview
+          </h3>
           <div className="flex items-center space-x-4 text-sm">
             {zones.map((zone) => (
-              <div key={zone.id} className="flex items-center">
+              <div key={zone.id} className="flex items-center bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
                 <div 
-                  className="w-4 h-4 rounded mr-2" 
+                  className="w-4 h-4 rounded-full mr-2 border border-white/20 shadow-lg" 
                   style={{ backgroundColor: zone.color }}
                 ></div>
-                <span className="text-gray-400">{zone.name} (${zone.price})</span>
+                <span className="text-gray-300 font-medium">{zone.name}</span>
+                <span className="text-gray-400 ml-1">(${zone.price})</span>
               </div>
             ))}
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-              <span className="text-gray-400">Occupied</span>
+            <div className="flex items-center bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+              <div className="w-4 h-4 bg-red-500 rounded-full mr-2 border border-white/20"></div>
+              <span className="text-gray-300 font-medium">Occupied</span>
+            </div>
+            <div className="flex items-center bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+              <div className="w-4 h-4 bg-green-500 rounded-full mr-2 border border-white/20"></div>
+              <span className="text-gray-300 font-medium">Available</span>
             </div>
           </div>
         </div>
 
-<div
+        <div
           ref={canvasRef}
-          className="relative w-full h-96 bg-gray-900 border border-gray-600 rounded-lg overflow-auto cursor-crosshair"
+          className="relative w-full h-96 bg-gray-900 border-2 border-gray-600 rounded-xl overflow-auto cursor-crosshair transition-all duration-300 hover:border-gray-500 shadow-inner"
           onClick={handleCanvasClick}
+          style={{ 
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`,
+            backgroundSize: '20px 20px'
+          }}
         >
+>
           {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <ApperIcon name="Loader2" className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                <p>Loading seat map...</p>
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-900/50 backdrop-blur-sm">
+              <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
+                <ApperIcon name="Loader2" className="w-8 h-8 mx-auto mb-3 animate-spin text-primary-400" />
+                <p className="text-gray-300">Loading seat map...</p>
               </div>
             </div>
           ) : (
-<>
               {/* Aisles */}
               {aisles.map((aisle) => (
                 <div
@@ -650,11 +682,12 @@ URL.revokeObjectURL(url);
                 );
               })}
               
-              {seats.length === 0 && entryExits.length === 0 && aisles.length === 0 && (
+{seats.length === 0 && entryExits.length === 0 && aisles.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <ApperIcon name="Grid3X3" className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Click to add seats, entry/exits, or aisles using tools above</p>
+                  <div className="text-center p-8 bg-gray-800/50 rounded-lg border border-gray-700 backdrop-blur-sm">
+                    <ApperIcon name="Grid3X3" className="w-16 h-16 mx-auto mb-4 opacity-50 text-primary-400" />
+                    <p className="text-gray-300 text-lg mb-2">Empty Canvas</p>
+                    <p className="text-gray-400">Click to add seats, entry/exits, or aisles using tools above</p>
                   </div>
                 </div>
               )}
@@ -662,17 +695,27 @@ URL.revokeObjectURL(url);
           )}
         </div>
 
-<div className="mt-4 text-sm text-gray-400 grid grid-cols-2 gap-4">
-          <div>
-            <p>Total Seats: {seats.length}</p>
-            <p>Selected: {selectedSeats.length}</p>
-          </div>
-          <div>
-            <p>Entry/Exits: {entryExits.length}</p>
-            <p>Aisles: {aisles.length}</p>
+        <div className="mt-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary-400">{seats.length}</p>
+              <p className="text-gray-400">Total Seats</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-accent-400">{selectedSeats.length}</p>
+              <p className="text-gray-400">Selected</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-400">{entryExits.length}</p>
+              <p className="text-gray-400">Entry/Exits</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-400">{aisles.length}</p>
+              <p className="text-gray-400">Aisles</p>
+            </div>
           </div>
         </div>
-</Card>
+      </Card>
 
       {/* Zone Management Modal */}
       {showZoneModal && (
