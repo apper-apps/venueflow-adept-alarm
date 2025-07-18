@@ -601,10 +601,9 @@ return (
           onClick={handleCanvasClick}
           style={{ 
             backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`,
-            backgroundSize: '20px 20px'
+backgroundSize: '20px 20px'
           }}
         >
->
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-900/50 backdrop-blur-sm">
               <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
@@ -612,7 +611,8 @@ return (
                 <p className="text-gray-300">Loading seat map...</p>
               </div>
             </div>
-          ) : (
+) : (
+            <>
               {/* Aisles */}
               {aisles.map((aisle) => (
                 <div
