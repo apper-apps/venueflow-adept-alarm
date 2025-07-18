@@ -103,16 +103,21 @@ const handleCanvasClick = (e) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (selectedTool === "seat" && currentZone) {
+if (selectedTool === "seat" && currentZone) {
+      const rowLabel = `R${Math.floor(y / 30) + 1}`;
+      const seatNumber = seats.filter(s => s.row === rowLabel).length + 1;
+      const currentZoneData = zones.find(z => z.id === currentZone);
+      
       const newSeat = {
         id: Date.now(),
+        name: `${rowLabel}-${seatNumber}`, // Unique seat identifier
         x: Math.round(x / 30) * 30,
         y: Math.round(y / 30) * 30,
-        row: `R${Math.floor(y / 30) + 1}`,
-        number: seats.filter(s => s.row === `R${Math.floor(y / 30) + 1}`).length + 1,
+        row: rowLabel,
+        number: seatNumber,
         zoneId: currentZone,
         mapId: seatMap?.Id,
-        type: zones.find(z => z.id === currentZone)?.name.toLowerCase().includes("vip") ? "vip" : "regular",
+        type: currentZoneData?.name.toLowerCase().includes("vip") ? "vip" : "regular",
         status: "available"
       };
       setSeats([...seats, newSeat]);
@@ -190,19 +195,22 @@ const handleSeatClick = (seat) => {
 const generateRow = () => {
     if (readOnly || !currentZone) return;
 
-    const rowNumber = Math.max(...seats.map(s => parseInt(s.row.substring(1))), 0) + 1;
+const rowNumber = Math.max(...seats.map(s => parseInt(s.row.substring(1))), 0) + 1;
+    const rowLabel = `R${rowNumber}`;
+    const currentZoneData = zones.find(z => z.id === currentZone);
     const newSeats = [];
     
     for (let i = 1; i <= 10; i++) {
       newSeats.push({
         id: Date.now() + i,
+        name: `${rowLabel}-${i}`, // Unique seat identifier
         x: i * 40,
         y: rowNumber * 40,
-        row: `R${rowNumber}`,
+        row: rowLabel,
         number: i,
         zoneId: currentZone,
         mapId: seatMap?.Id,
-        type: zones.find(z => z.id === currentZone)?.name.toLowerCase().includes("vip") ? "vip" : "regular",
+        type: currentZoneData?.name.toLowerCase().includes("vip") ? "vip" : "regular",
         status: "available"
       });
     }
@@ -657,13 +665,21 @@ backgroundSize: '20px 20px'
               ))}
 
               {/* Seats */}
-              {seats.map((seat) => {
+{seats.map((seat) => {
                 const zone = zones.find(z => z.id === seat.zoneId);
                 const seatWithZone = {
                   ...seat,
                   zone: zone?.name || "Unknown Zone",
                   price: zone?.price || 0,
-                  zoneColor: zone?.color || "#10b981"
+                  zoneColor: zone?.color || "#10b981",
+                  // Enhanced seat properties for comprehensive display
+                  seatId: seat.id,
+                  rowLabel: seat.row,
+                  seatNumber: seat.number,
+                  positionX: seat.x,
+                  positionY: seat.y,
+                  seatType: seat.type,
+                  seatStatus: seat.status
                 };
                 
                 return (

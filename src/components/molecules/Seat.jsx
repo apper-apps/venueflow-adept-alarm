@@ -53,7 +53,7 @@ return (
       )}
       style={getSeatStyle()}
       onClick={handleClick}
-      title={`Seat ${seat.number} - ${seat.row} - ${seat.zone || 'No Zone'} - $${seat.price || 0}`}
+title={`Seat ${seat.number} | Row ${seat.row} | Zone: ${seat.zone || 'No Zone'} | Price: $${seat.price || 0} | Type: ${seat.type || 'Regular'} | Status: ${seat.status || 'Available'}`}
     >
       {seat.number}
     </div>
