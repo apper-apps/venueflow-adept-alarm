@@ -1,4 +1,4 @@
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 class VenueService {
   constructor() {
@@ -324,5 +324,4 @@ class VenueService {
     }
   }
 }
-
 export default new VenueService();

@@ -1,4 +1,5 @@
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import React from "react";
 
 class EventService {
   constructor() {

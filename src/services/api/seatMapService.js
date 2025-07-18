@@ -222,8 +222,7 @@ if (successfulRecords.length > 0) {
       }
       return null;
     }
-  }
-
+}
   async update(id, seatMapData) {
 try {
 const params = {
@@ -373,6 +372,8 @@ async getTemplates() {
       }
       return [];
 }
+      return [];
+    }
   }
 
   async getZonesByMapId(mapId) {
