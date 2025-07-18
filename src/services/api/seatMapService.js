@@ -374,8 +374,7 @@ async getTemplates() {
         console.error(error.message);
       }
       return [];
-    }
-  }
+}
   }
 
   async getZonesByMapId(mapId) {
