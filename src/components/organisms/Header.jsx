@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useContext } from "react";
+import { useSelector } from 'react-redux';
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
+import { AuthContext } from "../../App";
 
 const Header = ({ onMenuClick, title = "Dashboard", subtitle }) => {
+  const { logout } = useContext(AuthContext);
+  const { user, isAuthenticated } = useSelector((state) => state.user);
+
+  const handleLogout = async () => {
+    if (logout) {
+      await logout();
+    }
+  };
+
   return (
     <header className="bg-surface border-b border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -31,6 +42,11 @@ const Header = ({ onMenuClick, title = "Dashboard", subtitle }) => {
           <Button variant="ghost" size="sm">
             <ApperIcon name="HelpCircle" className="w-5 h-5" />
           </Button>
+          {isAuthenticated && (
+            <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
+              <ApperIcon name="LogOut" className="w-5 h-5" />
+            </Button>
+          )}
         </div>
       </div>
     </header>
