@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import entryExitService from "@/services/api/entryExitService";
-import aisleService from "@/services/api/aisleService";
 import ApperIcon from "@/components/ApperIcon";
 import Loading from "@/components/ui/Loading";
 import Seat from "@/components/molecules/Seat";
@@ -10,6 +8,8 @@ import Input from "@/components/atoms/Input";
 import Button from "@/components/atoms/Button";
 import zoneService from "@/services/api/zoneService";
 import seatService from "@/services/api/seatService";
+import aisleService from "@/services/api/aisleService";
+import entryExitService from "@/services/api/entryExitService";
 const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
 const [selectedTool, setSelectedTool] = useState("seat");
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -326,7 +326,7 @@ setShowZoneModal(false);
 const handleSave = async () => {
     if (onSave) {
       await onSave({ zones, seats, entryExits, aisles });
-}
+    }
   };
 
   const handleExportJSON = () => {
@@ -965,8 +965,9 @@ URL.revokeObjectURL(url);
             </div>
           </Card>
         </div>
+</div>
       )}
     </div>
-};
+  );
 
 export default SeatMapBuilder;
