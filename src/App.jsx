@@ -128,7 +128,7 @@ function AppContent() {
   return (
     <AuthContext.Provider value={authMethods}>
       <div className="min-h-screen bg-gray-900">
-        <Routes>
+<Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/callback" element={<Callback />} />
@@ -137,9 +137,18 @@ function AppContent() {
           <Route path="/reset-password/:appId/:fields" element={<ResetPassword />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/events" element={<EventsPage />} />
+          <Route path="/events/new" element={<EventsPage />} />
+          <Route path="/events/:eventId" element={<EventsPage />} />
+          <Route path="/events/:eventId/edit" element={<EventsPage />} />
           <Route path="/events/:eventId/purchase" element={<EventPurchasePage />} />
           <Route path="/venues" element={<VenuesPage />} />
+          <Route path="/venues/new" element={<VenuesPage />} />
+          <Route path="/venues/:venueId" element={<VenuesPage />} />
+          <Route path="/venues/:venueId/edit" element={<VenuesPage />} />
           <Route path="/seat-maps" element={<SeatMapsPage />} />
+          <Route path="/seat-maps/new" element={<SeatMapsPage />} />
+          <Route path="/seat-maps/:seatMapId" element={<SeatMapsPage />} />
+          <Route path="/seat-maps/:seatMapId/edit" element={<SeatMapsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/scanner" element={<ScannerPage />} />
           <Route path="/settings" element={<SettingsPage />} />
