@@ -1,0 +1,83 @@
+[
+  {
+    "Id": 1,
+    "tenantId": 1,
+    "venueId": 1,
+    "venueName": "Grand Theater",
+    "name": "Rock Concert Spectacular",
+    "description": "An amazing rock concert featuring multiple artists",
+    "date": "2024-12-25T20:00:00Z",
+    "endDate": "2024-12-25T23:00:00Z",
+    "status": "published",
+    "ticketsSold": 127,
+    "capacity": 500,
+    "revenue": 9525,
+    "image": "/event1.jpg",
+    "pricing": {
+      "Orchestra": 75,
+      "Mezzanine": 60,
+      "Balcony": 45
+    },
+    "createdAt": "2024-01-15T00:00:00Z"
+  },
+  {
+    "Id": 2,
+    "tenantId": 1,
+    "venueId": 2,
+    "venueName": "Arena Complex",
+    "name": "Jazz Night",
+    "description": "Smooth jazz evening with renowned artists",
+    "date": "2024-12-30T19:30:00Z",
+    "endDate": "2024-12-30T22:30:00Z",
+    "status": "published",
+    "ticketsSold": 89,
+    "capacity": 2000,
+    "revenue": 8900,
+    "image": "/event2.jpg",
+    "pricing": {
+      "VIP": 200,
+      "General": 100
+    },
+    "createdAt": "2024-01-16T00:00:00Z"
+  },
+  {
+    "Id": 3,
+    "tenantId": 1,
+    "venueId": 1,
+    "venueName": "Grand Theater",
+    "name": "Comedy Show",
+    "description": "Hilarious stand-up comedy night",
+    "date": "2025-01-05T21:00:00Z",
+    "endDate": "2025-01-05T23:30:00Z",
+    "status": "draft",
+    "ticketsSold": 0,
+    "capacity": 500,
+    "revenue": 0,
+    "image": "/event3.jpg",
+    "pricing": {
+      "Orchestra": 65,
+      "Mezzanine": 50,
+      "Balcony": 35
+    },
+    "createdAt": "2024-01-17T00:00:00Z"
+  },
+  {
+    "Id": 4,
+    "tenantId": 1,
+    "venueId": 3,
+    "venueName": "Intimate Club",
+    "name": "Acoustic Session",
+    "description": "Intimate acoustic performance",
+    "date": "2025-01-10T20:00:00Z",
+    "endDate": "2025-01-10T22:00:00Z",
+    "status": "published",
+    "ticketsSold": 45,
+    "capacity": 150,
+    "revenue": 2250,
+    "image": "/event4.jpg",
+    "pricing": {
+      "General": 50
+    },
+    "createdAt": "2024-01-18T00:00:00Z"
+  }
+]

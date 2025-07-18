@@ -1,0 +1,14 @@
+[
+  {
+    "Id": 1,
+    "name": "VenueFlow Demo",
+    "subdomain": "demo",
+    "logo": "/logo.png",
+    "settings": {
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "features": ["seat_maps", "analytics", "qr_scanner"]
+    },
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+]

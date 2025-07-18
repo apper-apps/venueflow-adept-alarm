@@ -1,0 +1,62 @@
+[
+  {
+    "Id": 1,
+    "venueId": 1,
+    "name": "Grand Theater Main Floor",
+    "isTemplate": false,
+    "zones": [
+      {
+        "id": 1,
+        "name": "Orchestra",
+        "color": "#10b981",
+        "price": 75
+      },
+      {
+        "id": 2,
+        "name": "Mezzanine",
+        "color": "#3b82f6",
+        "price": 60
+      },
+      {
+        "id": 3,
+        "name": "Balcony",
+        "color": "#8b5cf6",
+        "price": 45
+      }
+    ],
+    "seats": [
+      {"id": 1, "x": 100, "y": 50, "row": "A", "number": 1, "zoneId": 1, "type": "regular", "price": 75, "status": "available"},
+      {"id": 2, "x": 130, "y": 50, "row": "A", "number": 2, "zoneId": 1, "type": "regular", "price": 75, "status": "available"},
+      {"id": 3, "x": 160, "y": 50, "row": "A", "number": 3, "zoneId": 1, "type": "regular", "price": 75, "status": "occupied"},
+      {"id": 4, "x": 190, "y": 50, "row": "A", "number": 4, "zoneId": 1, "type": "regular", "price": 75, "status": "available"},
+      {"id": 5, "x": 220, "y": 50, "row": "A", "number": 5, "zoneId": 1, "type": "regular", "price": 75, "status": "available"}
+    ],
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "Id": 2,
+    "venueId": 2,
+    "name": "Arena Floor Plan",
+    "isTemplate": false,
+    "zones": [
+      {
+        "id": 1,
+        "name": "VIP",
+        "color": "#8b5cf6",
+        "price": 200
+      },
+      {
+        "id": 2,
+        "name": "General",
+        "color": "#10b981",
+        "price": 100
+      }
+    ],
+    "seats": [
+      {"id": 6, "x": 50, "y": 30, "row": "VIP1", "number": 1, "zoneId": 1, "type": "vip", "price": 200, "status": "available"},
+      {"id": 7, "x": 80, "y": 30, "row": "VIP1", "number": 2, "zoneId": 1, "type": "vip", "price": 200, "status": "available"},
+      {"id": 8, "x": 110, "y": 30, "row": "VIP1", "number": 3, "zoneId": 1, "type": "vip", "price": 200, "status": "available"}
+    ],
+    "createdAt": "2024-01-02T00:00:00Z"
+  }
+]

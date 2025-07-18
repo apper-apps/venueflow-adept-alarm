@@ -1,0 +1,53 @@
+[
+  {
+    "Id": 1,
+    "tenantId": 1,
+    "name": "Grand Theater",
+    "address": {
+      "street": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "capacity": 500,
+    "seatMapId": 1,
+    "description": "A beautiful historic theater in downtown",
+    "amenities": ["parking", "bar", "restaurant"],
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "Id": 2,
+    "tenantId": 1,
+    "name": "Arena Complex",
+    "address": {
+      "street": "456 Sports Blvd",
+      "city": "Los Angeles",
+      "state": "CA",
+      "zipCode": "90210",
+      "country": "USA"
+    },
+    "capacity": 2000,
+    "seatMapId": 2,
+    "description": "Modern arena for concerts and sports",
+    "amenities": ["parking", "concessions", "vip_lounges"],
+    "createdAt": "2024-01-02T00:00:00Z"
+  },
+  {
+    "Id": 3,
+    "tenantId": 1,
+    "name": "Intimate Club",
+    "address": {
+      "street": "789 Music Ave",
+      "city": "Nashville",
+      "state": "TN",
+      "zipCode": "37201",
+      "country": "USA"
+    },
+    "capacity": 150,
+    "seatMapId": 3,
+    "description": "Cozy venue for intimate performances",
+    "amenities": ["bar", "dance_floor"],
+    "createdAt": "2024-01-03T00:00:00Z"
+  }
+]
