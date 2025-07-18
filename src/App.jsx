@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from "react-toastify";
 import { store } from './store/store';
 import { setUser, clearUser } from './store/userSlice';
-
+import { ThemeProvider } from './contexts/ThemeContext';
 // Pages
 import Dashboard from "@/components/pages/Dashboard";
 import EventsPage from "@/components/pages/EventsPage";
@@ -174,9 +174,11 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <Router>
-        <AppContent />
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </ThemeProvider>
     </Provider>
   );
 }

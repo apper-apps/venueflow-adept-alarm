@@ -75,7 +75,7 @@ body {
     background-clip: text;
   }
   
-  .seat-available {
+.seat-available {
     @apply bg-green-500 hover:bg-green-400 cursor-pointer transition-all duration-200 hover:scale-110;
   }
   
@@ -90,4 +90,65 @@ body {
   .seat-vip {
     @apply bg-purple-500 hover:bg-purple-400;
   }
+}
+
+/* Light/Dark Mode Support */
+:root {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-surface: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color: #374151;
+}
+
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-surface: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+}
+
+.dark {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-surface: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color: #374151;
+}
+
+/* Theme transition for smooth switching */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode styles */
+.light body {
+  background-color: #f8fafc;
+  color: #1f2937;
+}
+
+.light .Toastify__toast {
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+}
+
+.light .Toastify__toast--success {
+  border-left: 4px solid #10b981;
+}
+
+.light .Toastify__toast--error {
+  border-left: 4px solid #ef4444;
+}
+
+.light .Toastify__toast--warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.light .Toastify__toast--info {
+  border-left: 4px solid #3b82f6;
 }
