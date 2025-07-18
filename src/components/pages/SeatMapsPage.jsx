@@ -8,6 +8,7 @@ import Empty from "@/components/ui/Empty";
 import Card from "@/components/atoms/Card";
 import Button from "@/components/atoms/Button";
 import Badge from "@/components/atoms/Badge";
+import FormField from "@/components/molecules/FormField";
 import ApperIcon from "@/components/ApperIcon";
 import { useSeatMaps } from "@/hooks/useSeatMaps";
 import { useVenues } from "@/hooks/useVenues";
@@ -17,16 +18,45 @@ import { toast } from "react-toastify";
 const SeatMapsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMap, setSelectedMap] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingMap, setEditingMap] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    venueId: "",
+    isTemplate: false,
+    zones: [],
+    seats: []
+  });
+  const [saving, setSaving] = useState(false);
   const { seatMaps, loading: mapsLoading, error: mapsError, loadSeatMaps, deleteSeatMap } = useSeatMaps();
   const { venues, loading: venuesLoading } = useVenues();
   const navigate = useNavigate();
 
   const handleCreateSeatMap = () => {
-    navigate("/seat-maps/new");
+    setEditingMap(null);
+    setFormData({
+      name: "",
+      venueId: "",
+      isTemplate: false,
+      zones: [
+        { id: 1, name: "General", color: "#10b981", price: 50 },
+        { id: 2, name: "VIP", color: "#8b5cf6", price: 100 }
+      ],
+      seats: []
+    });
+    setShowModal(true);
   };
 
   const handleEditSeatMap = (seatMap) => {
-    navigate(`/seat-maps/${seatMap.Id}/edit`);
+    setEditingMap(seatMap);
+    setFormData({
+      name: seatMap.name || "",
+      venueId: seatMap.venueId || "",
+      isTemplate: seatMap.isTemplate || false,
+      zones: seatMap.zones || [],
+      seats: seatMap.seats || []
+    });
+    setShowModal(true);
   };
 
   const handleDeleteSeatMap = async (seatMap) => {
@@ -45,6 +75,56 @@ const SeatMapsPage = () => {
 
   const handleViewSeatMap = (seatMap) => {
     setSelectedMap(seatMap);
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSeatMapBuilderSave = (seatMapData) => {
+    setFormData(prev => ({
+      ...prev,
+      zones: seatMapData.zones,
+      seats: seatMapData.seats
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!formData.name) {
+      toast.error("Please enter a seat map name");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const seatMapData = {
+        name: formData.name,
+        venueId: formData.venueId || null,
+        isTemplate: formData.isTemplate,
+        zones: formData.zones,
+        seats: formData.seats
+      };
+
+      if (editingMap) {
+        const seatMapService = (await import("@/services/api/seatMapService")).default;
+        await seatMapService.update(editingMap.Id, seatMapData);
+        toast.success("Seat map updated successfully");
+      } else {
+        const seatMapService = (await import("@/services/api/seatMapService")).default;
+        await seatMapService.create(seatMapData);
+        toast.success("Seat map created successfully");
+      }
+
+      setShowModal(false);
+      loadSeatMaps();
+    } catch (err) {
+      toast.error(editingMap ? "Failed to update seat map" : "Failed to create seat map");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getVenueName = (venueId) => {
@@ -206,6 +286,85 @@ const SeatMapsPage = () => {
                 <p className="text-sm text-gray-400">Templates</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Seat Map Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white">
+                    {editingMap ? "Edit Seat Map" : "Create Seat Map"}
+                  </h2>
+                  <Button variant="ghost" onClick={() => setShowModal(false)}>
+                    <ApperIcon name="X" className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="Seat Map Name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      placeholder="Enter seat map name"
+                      required
+                    />
+                    <FormField
+                      type="select"
+                      label="Venue"
+                      name="venueId"
+                      value={formData.venueId}
+                      onChange={handleFormChange}
+                      options={venues.map(venue => ({
+                        value: venue.Id,
+                        label: venue.name
+                      }))}
+                      placeholder="Select venue (optional)"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isTemplate"
+                      checked={formData.isTemplate}
+                      onChange={(e) => handleFormChange("isTemplate", e.target.checked)}
+                      className="w-4 h-4 text-primary-600 bg-surface border-gray-600 rounded focus:ring-primary-500"
+                    />
+                    <label htmlFor="isTemplate" className="text-sm font-medium text-gray-300">
+                      Create as template (can be reused for multiple venues)
+                    </label>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Seat Map Builder</h3>
+                    <SeatMapBuilder
+                      seatMap={formData}
+                      onSave={handleSeatMapBuilderSave}
+                      readOnly={false}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-8">
+                  <Button variant="secondary" onClick={() => setShowModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={handleSave} disabled={saving}>
+                    {saving ? (
+                      <ApperIcon name="Loader2" className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <ApperIcon name="Save" className="w-4 h-4 mr-2" />
+                    )}
+                    {editingMap ? "Update Seat Map" : "Create Seat Map"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
       </div>

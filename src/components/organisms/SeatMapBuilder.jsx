@@ -82,7 +82,7 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
     setSeats([...seats, ...newSeats]);
   };
 
-  const handleSave = () => {
+const handleSave = () => {
     if (onSave) {
       onSave({ zones, seats });
     }
