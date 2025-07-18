@@ -42,7 +42,7 @@ const Seat = ({
         disabled ? "cursor-not-allowed" : "cursor-pointer"
       )}
       onClick={handleClick}
-      title={`Seat ${seat.number} - ${seat.row} - ${seat.zone} - $${seat.price}`}
+title={`Seat ${seat.number} - ${seat.row} - ${seat.zone || 'No Zone'} - $${seat.price || 0}`}
     >
       {seat.number}
     </div>

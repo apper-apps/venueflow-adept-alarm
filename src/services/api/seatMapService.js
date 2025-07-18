@@ -1,4 +1,5 @@
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import React from "react";
 
 class SeatMapService {
   constructor() {
@@ -18,14 +19,13 @@ class SeatMapService {
   async getAll() {
     try {
       const params = {
-        fields: [
+fields: [
           { field: { Name: "Name" } },
           { field: { Name: "Tags" } },
           { field: { Name: "Owner" } },
           { field: { Name: "is_template" } },
-          { field: { Name: "zones" } },
-          { field: { Name: "seats" } },
           { field: { Name: "venue_id" } },
+          { field: { Name: "dimensions" } },
           { field: { Name: "created_at" } }
         ],
         orderBy: [
@@ -41,16 +41,28 @@ class SeatMapService {
         return [];
       }
 
-      // Transform data to match expected format
-      return response.data?.map(seatMap => ({
-        Id: seatMap.Id,
-        name: seatMap.Name,
-        venueId: seatMap.venue_id,
-        isTemplate: seatMap.is_template,
-        zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-        seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
-        createdAt: seatMap.created_at
-      })) || [];
+// Transform data to match expected format and get zone/seat counts
+      const seatMaps = await Promise.all(
+        (response.data || []).map(async (seatMap) => {
+          const [zones, seats] = await Promise.all([
+            this.getZonesByMapId(seatMap.Id),
+            this.getSeatsByMapId(seatMap.Id)
+          ]);
+
+          return {
+            Id: seatMap.Id,
+            name: seatMap.Name,
+            venueId: seatMap.venue_id,
+            isTemplate: seatMap.is_template,
+            dimensions: seatMap.dimensions,
+            createdAt: seatMap.created_at,
+            totalZones: zones.length,
+            totalSeats: seats.length
+          };
+        })
+      );
+
+      return seatMaps;
     } catch (error) {
       if (error?.response?.data?.message) {
         console.error("Error fetching seat maps:", error?.response?.data?.message);
@@ -63,15 +75,14 @@ class SeatMapService {
 
   async getById(id) {
     try {
-      const params = {
+const params = {
         fields: [
           { field: { Name: "Name" } },
           { field: { Name: "Tags" } },
           { field: { Name: "Owner" } },
           { field: { Name: "is_template" } },
-          { field: { Name: "zones" } },
-          { field: { Name: "seats" } },
           { field: { Name: "venue_id" } },
+          { field: { Name: "dimensions" } },
           { field: { Name: "created_at" } }
         ]
       };
@@ -82,16 +93,22 @@ class SeatMapService {
         return null;
       }
 
-      // Transform data to match expected format
+// Transform data to match expected format and get zone/seat data
       const seatMap = response.data;
+      const [zones, seats] = await Promise.all([
+        this.getZonesByMapId(seatMap.Id),
+        this.getSeatsByMapId(seatMap.Id)
+      ]);
+
       return {
         Id: seatMap.Id,
         name: seatMap.Name,
         venueId: seatMap.venue_id,
         isTemplate: seatMap.is_template,
-        zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-        seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
-        createdAt: seatMap.created_at
+        dimensions: seatMap.dimensions,
+        createdAt: seatMap.created_at,
+        zones: zones,
+        seats: seats
       };
     } catch (error) {
       if (error?.response?.data?.message) {
@@ -105,13 +122,12 @@ class SeatMapService {
 
   async getByVenueId(venueId) {
     try {
-      const params = {
+const params = {
         fields: [
           { field: { Name: "Name" } },
           { field: { Name: "is_template" } },
-          { field: { Name: "zones" } },
-          { field: { Name: "seats" } },
           { field: { Name: "venue_id" } },
+          { field: { Name: "dimensions" } },
           { field: { Name: "created_at" } }
         ],
         where: [
@@ -130,13 +146,12 @@ class SeatMapService {
         return [];
       }
 
-      return response.data?.map(seatMap => ({
+return response.data?.map(seatMap => ({
         Id: seatMap.Id,
         name: seatMap.Name,
         venueId: seatMap.venue_id,
         isTemplate: seatMap.is_template,
-        zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-        seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
+        dimensions: seatMap.dimensions,
         createdAt: seatMap.created_at
       })) || [];
     } catch (error) {
@@ -151,15 +166,14 @@ class SeatMapService {
 
   async create(seatMapData) {
     try {
-      const params = {
+const params = {
         records: [
           {
             Name: seatMapData.name,
             Tags: seatMapData.tags || "",
             is_template: seatMapData.isTemplate || false,
-            zones: JSON.stringify(seatMapData.zones || []),
-            seats: JSON.stringify(seatMapData.seats || []),
             venue_id: seatMapData.venueId || null,
+            dimensions: seatMapData.dimensions || "800x600",
             created_at: new Date().toISOString()
           }
         ]
@@ -188,15 +202,14 @@ class SeatMapService {
           });
         }
 
-        if (successfulRecords.length > 0) {
+if (successfulRecords.length > 0) {
           const seatMap = successfulRecords[0].data;
           return {
             Id: seatMap.Id,
             name: seatMap.Name,
             venueId: seatMap.venue_id,
             isTemplate: seatMap.is_template,
-            zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-            seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
+            dimensions: seatMap.dimensions,
             createdAt: seatMap.created_at
           };
         }
@@ -214,16 +227,15 @@ class SeatMapService {
 
   async update(id, seatMapData) {
     try {
-      const params = {
+const params = {
         records: [
           {
             Id: id,
             Name: seatMapData.name,
             Tags: seatMapData.tags || "",
             is_template: seatMapData.isTemplate,
-            zones: JSON.stringify(seatMapData.zones || []),
-            seats: JSON.stringify(seatMapData.seats || []),
-            venue_id: seatMapData.venueId
+            venue_id: seatMapData.venueId,
+            dimensions: seatMapData.dimensions || "800x600"
           }
         ]
       };
@@ -251,15 +263,14 @@ class SeatMapService {
           });
         }
 
-        if (successfulUpdates.length > 0) {
+if (successfulUpdates.length > 0) {
           const seatMap = successfulUpdates[0].data;
           return {
             Id: seatMap.Id,
             name: seatMap.Name,
             venueId: seatMap.venue_id,
             isTemplate: seatMap.is_template,
-            zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-            seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
+            dimensions: seatMap.dimensions,
             createdAt: seatMap.created_at
           };
         }
@@ -322,15 +333,14 @@ class SeatMapService {
     });
   }
 
-  async getTemplates() {
+async getTemplates() {
     try {
       const params = {
         fields: [
           { field: { Name: "Name" } },
           { field: { Name: "Tags" } },
           { field: { Name: "is_template" } },
-          { field: { Name: "zones" } },
-          { field: { Name: "seats" } },
+          { field: { Name: "dimensions" } },
           { field: { Name: "created_at" } }
         ],
         where: [
@@ -354,8 +364,7 @@ class SeatMapService {
         name: seatMap.Name,
         venueId: null,
         isTemplate: true,
-        zones: seatMap.zones ? JSON.parse(seatMap.zones) : [],
-        seats: seatMap.seats ? JSON.parse(seatMap.seats) : [],
+        dimensions: seatMap.dimensions,
         createdAt: seatMap.created_at
       })) || [];
     } catch (error) {
@@ -364,6 +373,27 @@ class SeatMapService {
       } else {
         console.error(error.message);
       }
+      return [];
+    }
+  }
+  }
+
+  async getZonesByMapId(mapId) {
+    try {
+      const zoneService = (await import("@/services/api/zoneService")).default;
+      return await zoneService.getByMapId(mapId);
+    } catch (error) {
+      console.error("Error fetching zones for map:", error);
+      return [];
+    }
+  }
+
+  async getSeatsByMapId(mapId) {
+    try {
+      const seatService = (await import("@/services/api/seatService")).default;
+      return await seatService.getByMapId(mapId);
+    } catch (error) {
+      console.error("Error fetching seats for map:", error);
       return [];
     }
   }

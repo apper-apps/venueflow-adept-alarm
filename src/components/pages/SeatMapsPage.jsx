@@ -14,6 +14,8 @@ import { useSeatMaps } from "@/hooks/useSeatMaps";
 import { useVenues } from "@/hooks/useVenues";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import zoneService from "@/services/api/zoneService";
+import seatService from "@/services/api/seatService";
 
 const SeatMapsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,16 +85,14 @@ const SeatMapsPage = () => {
       [field]: value
     }));
   };
-
-  const handleSeatMapBuilderSave = (seatMapData) => {
+const handleSeatMapBuilderSave = async (seatMapData) => {
     setFormData(prev => ({
       ...prev,
       zones: seatMapData.zones,
       seats: seatMapData.seats
     }));
   };
-
-  const handleSave = async () => {
+const handleSave = async () => {
     if (!formData.name) {
       toast.error("Please enter a seat map name");
       return;
@@ -104,17 +104,27 @@ const SeatMapsPage = () => {
         name: formData.name,
         venueId: formData.venueId || null,
         isTemplate: formData.isTemplate,
-        zones: formData.zones,
-        seats: formData.seats
+        dimensions: "800x600" // Default dimensions
       };
 
+      let savedSeatMap;
       if (editingMap) {
         const seatMapService = (await import("@/services/api/seatMapService")).default;
-        await seatMapService.update(editingMap.Id, seatMapData);
+        savedSeatMap = await seatMapService.update(editingMap.Id, seatMapData);
+        
+        // Update zones and seats
+        await saveZonesAndSeats(editingMap.Id, formData.zones, formData.seats);
+        
         toast.success("Seat map updated successfully");
       } else {
         const seatMapService = (await import("@/services/api/seatMapService")).default;
-        await seatMapService.create(seatMapData);
+        savedSeatMap = await seatMapService.create(seatMapData);
+        
+        if (savedSeatMap) {
+          // Save zones and seats with the new seat map ID
+          await saveZonesAndSeats(savedSeatMap.Id, formData.zones, formData.seats);
+        }
+        
         toast.success("Seat map created successfully");
       }
 
@@ -127,14 +137,57 @@ const SeatMapsPage = () => {
     }
   };
 
+  const saveZonesAndSeats = async (mapId, zones, seats) => {
+    try {
+      // Delete existing zones and seats for this map
+      await Promise.all([
+        zoneService.deleteByMapId(mapId),
+        seatService.deleteByMapId(mapId)
+      ]);
+
+      // Create new zones
+      const zonePromises = zones.map(zone => 
+        zoneService.create({
+          name: zone.name,
+          mapId: mapId,
+          price: zone.price,
+          color: zone.color
+        })
+      );
+      
+      const savedZones = await Promise.all(zonePromises);
+
+      // Create mapping from old zone ids to new zone ids
+      const zoneIdMap = {};
+      zones.forEach((zone, index) => {
+        if (savedZones[index]) {
+          zoneIdMap[zone.id] = savedZones[index].Id;
+        }
+      });
+
+      // Create new seats with updated zone references
+      const seatsWithUpdatedZones = seats.map(seat => ({
+        ...seat,
+        mapId: mapId,
+        zoneId: zoneIdMap[seat.zoneId] || savedZones[0]?.Id || null
+      }));
+
+      if (seatsWithUpdatedZones.length > 0) {
+        await seatService.createBulk(seatsWithUpdatedZones);
+      }
+    } catch (error) {
+      console.error("Error saving zones and seats:", error);
+      throw error;
+    }
+  };
+
   const getVenueName = (venueId) => {
     const venue = venues.find(v => v.Id === venueId);
     return venue ? venue.name : "Unknown Venue";
   };
-
-  const filteredSeatMaps = seatMaps.filter(map =>
-    map.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getVenueName(map.venueId).toLowerCase().includes(searchTerm.toLowerCase())
+const filteredSeatMaps = seatMaps.filter(map =>
+    map.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getVenueName(map.venueId)?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (mapsLoading || venuesLoading) {
@@ -212,26 +265,26 @@ const SeatMapsPage = () => {
                         <ApperIcon name="Building" className="w-4 h-4 mr-2" />
                         {seatMap.venueId ? getVenueName(seatMap.venueId) : "Template"}
                       </div>
-                      <div className="flex items-center text-gray-400 text-sm">
+<div className="flex items-center text-gray-400 text-sm">
                         <ApperIcon name="Grid3X3" className="w-4 h-4 mr-2" />
-                        {seatMap.seats?.length || 0} seats
+                        {seatMap.totalSeats || 0} seats
                       </div>
                       <div className="flex items-center text-gray-400 text-sm">
                         <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
-                        {seatMap.zones?.length || 0} zones
+                        {seatMap.totalZones || 0} zones
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {seatMap.isTemplate && (
-                        <Badge variant="accent">Template</Badge>
-                      )}
-                      {seatMap.zones?.map((zone) => (
-                        <Badge key={zone.id} variant="primary" className="text-xs">
-                          {zone.name}
-                        </Badge>
-                      ))}
-                    </div>
+<div className="flex flex-wrap gap-1 mb-4">
+                       {seatMap.isTemplate && (
+                         <Badge variant="accent">Template</Badge>
+                       )}
+                       {seatMap.dimensions && (
+                         <Badge variant="secondary" className="text-xs">
+                           {seatMap.dimensions}
+                         </Badge>
+                       )}
+                     </div>
                   </div>
                 </div>
 
@@ -273,9 +326,9 @@ const SeatMapsPage = () => {
                 <p className="text-2xl font-bold text-white">{filteredSeatMaps.length}</p>
                 <p className="text-sm text-gray-400">Total Maps</p>
               </div>
-              <div>
+<div>
                 <p className="text-2xl font-bold text-primary-400">
-                  {filteredSeatMaps.reduce((sum, map) => sum + (map.seats?.length || 0), 0)}
+                  {filteredSeatMaps.reduce((sum, map) => sum + (map.totalSeats || 0), 0)}
                 </p>
                 <p className="text-sm text-gray-400">Total Seats</p>
               </div>

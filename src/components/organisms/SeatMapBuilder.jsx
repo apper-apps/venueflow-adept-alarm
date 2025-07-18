@@ -5,17 +5,52 @@ import Input from "@/components/atoms/Input";
 import Select from "@/components/atoms/Select";
 import ApperIcon from "@/components/ApperIcon";
 import Seat from "@/components/molecules/Seat";
+import zoneService from "@/services/api/zoneService";
+import seatService from "@/services/api/seatService";
 
 const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
   const [selectedTool, setSelectedTool] = useState("seat");
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [zones, setZones] = useState(seatMap?.zones || [
-    { id: 1, name: "General", color: "#10b981", price: 50 },
-    { id: 2, name: "VIP", color: "#8b5cf6", price: 100 }
-  ]);
-  const [seats, setSeats] = useState(seatMap?.seats || []);
-  const [currentZone, setCurrentZone] = useState(1);
+  const [zones, setZones] = useState([]);
+  const [seats, setSeats] = useState([]);
+  const [loading, setLoading] = useState(false);
+const [currentZone, setCurrentZone] = useState(null);
   const canvasRef = useRef(null);
+
+  // Load zones and seats when seatMap changes
+  useEffect(() => {
+    if (seatMap && seatMap.Id) {
+      loadZonesAndSeats();
+    } else {
+      // Set default zones for new seat maps
+      setZones([
+        { id: 1, name: "General", color: "#10b981", price: 50 },
+        { id: 2, name: "VIP", color: "#8b5cf6", price: 100 }
+      ]);
+      setCurrentZone(1);
+    }
+  }, [seatMap]);
+
+  const loadZonesAndSeats = async () => {
+    setLoading(true);
+    try {
+      const [zonesData, seatsData] = await Promise.all([
+        zoneService.getByMapId(seatMap.Id),
+        seatService.getByMapId(seatMap.Id)
+      ]);
+      
+      setZones(zonesData);
+      setSeats(seatsData);
+      
+      if (zonesData.length > 0) {
+        setCurrentZone(zonesData[0].id);
+      }
+    } catch (error) {
+      console.error("Error loading zones and seats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tools = [
     { id: "seat", name: "Add Seat", icon: "Square" },
@@ -31,7 +66,7 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (selectedTool === "seat") {
+if (selectedTool === "seat" && currentZone) {
       const newSeat = {
         id: Date.now(),
         x: Math.round(x / 30) * 30,
@@ -39,8 +74,8 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
         row: `R${Math.floor(y / 30) + 1}`,
         number: seats.filter(s => s.row === `R${Math.floor(y / 30) + 1}`).length + 1,
         zoneId: currentZone,
+        mapId: seatMap?.Id,
         type: zones.find(z => z.id === currentZone)?.name.toLowerCase().includes("vip") ? "vip" : "regular",
-        price: zones.find(z => z.id === currentZone)?.price || 50,
         status: "available"
       };
       setSeats([...seats, newSeat]);
@@ -59,8 +94,8 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
     }
   };
 
-  const generateRow = () => {
-    if (readOnly) return;
+const generateRow = () => {
+    if (readOnly || !currentZone) return;
 
     const rowNumber = Math.max(...seats.map(s => parseInt(s.row.substring(1))), 0) + 1;
     const newSeats = [];
@@ -73,8 +108,8 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
         row: `R${rowNumber}`,
         number: i,
         zoneId: currentZone,
+        mapId: seatMap?.Id,
         type: zones.find(z => z.id === currentZone)?.name.toLowerCase().includes("vip") ? "vip" : "regular",
-        price: zones.find(z => z.id === currentZone)?.price || 50,
         status: "available"
       });
     }
@@ -82,9 +117,9 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
     setSeats([...seats, ...newSeats]);
   };
 
-const handleSave = () => {
+const handleSave = async () => {
     if (onSave) {
-      onSave({ zones, seats });
+      await onSave({ zones, seats });
     }
   };
 
@@ -113,17 +148,22 @@ const handleSave = () => {
               </div>
             </div>
 
-            <div>
+<div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Current Zone</label>
               <Select
-                value={currentZone}
+                value={currentZone || ""}
                 onChange={(e) => setCurrentZone(parseInt(e.target.value))}
+                disabled={zones.length === 0}
               >
-                {zones.map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name} - ${zone.price}
-                  </option>
-                ))}
+                {zones.length === 0 ? (
+                  <option value="">No zones available</option>
+                ) : (
+                  zones.map((zone) => (
+                    <option key={zone.id} value={zone.id}>
+                      {zone.name} - ${zone.price}
+                    </option>
+                  ))
+                )}
               </Select>
               <Button
                 variant="accent"
@@ -180,33 +220,53 @@ const handleSave = () => {
           </div>
         </div>
 
-        <div
+<div
           ref={canvasRef}
           className="relative w-full h-96 bg-gray-900 border border-gray-600 rounded-lg overflow-auto cursor-crosshair"
           onClick={handleCanvasClick}
         >
-          {seats.map((seat) => (
-            <div
-              key={seat.id}
-              className="absolute"
-              style={{ left: seat.x, top: seat.y }}
-            >
-              <Seat
-                seat={seat}
-                isSelected={selectedSeats.includes(seat.id)}
-                onSelect={handleSeatClick}
-                disabled={readOnly}
-              />
-            </div>
-          ))}
-          
-          {seats.length === 0 && (
+          {loading ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
               <div className="text-center">
-                <ApperIcon name="Grid3X3" className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Click to add seats or use tools above</p>
+                <ApperIcon name="Loader2" className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                <p>Loading seat map...</p>
               </div>
             </div>
+          ) : (
+            <>
+              {seats.map((seat) => {
+                const zone = zones.find(z => z.id === seat.zoneId);
+                const seatWithZone = {
+                  ...seat,
+                  zone: zone?.name || "Unknown Zone",
+                  price: zone?.price || 0
+                };
+                
+                return (
+                  <div
+                    key={seat.id}
+                    className="absolute"
+                    style={{ left: seat.x, top: seat.y }}
+                  >
+                    <Seat
+                      seat={seatWithZone}
+                      isSelected={selectedSeats.includes(seat.id)}
+                      onSelect={handleSeatClick}
+                      disabled={readOnly}
+                    />
+                  </div>
+                );
+              })}
+              
+              {seats.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <ApperIcon name="Grid3X3" className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Click to add seats or use tools above</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
