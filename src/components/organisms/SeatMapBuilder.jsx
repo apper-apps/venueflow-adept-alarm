@@ -857,7 +857,7 @@ URL.revokeObjectURL(url);
       )}
 
       {/* Aisle Management Modal */}
-      {showAisleModal && (
+{showAisleModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
@@ -965,9 +965,9 @@ URL.revokeObjectURL(url);
             </div>
           </Card>
         </div>
-</div>
-      )}
+)}
     </div>
   );
+};
 
 export default SeatMapBuilder;
