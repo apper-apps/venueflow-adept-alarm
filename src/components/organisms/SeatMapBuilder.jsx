@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
-import Card from "@/components/atoms/Card";
-import Button from "@/components/atoms/Button";
-import Input from "@/components/atoms/Input";
-import Select from "@/components/atoms/Select";
+import React, { useEffect, useRef, useState } from "react";
 import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
 import Seat from "@/components/molecules/Seat";
+import Card from "@/components/atoms/Card";
+import Select from "@/components/atoms/Select";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
 import zoneService from "@/services/api/zoneService";
 import seatService from "@/services/api/seatService";
-
 const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
   const [selectedTool, setSelectedTool] = useState("seat");
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -196,9 +196,99 @@ const handleCreateZone = () => {
     setShowZoneModal(false);
   };
 
-  const handleSave = async () => {
+const handleSave = async () => {
     if (onSave) {
       await onSave({ zones, seats });
+    }
+  };
+
+  const handleExportJSON = () => {
+    try {
+      // Create comprehensive export data structure for analytics
+      const exportData = {
+        metadata: {
+          seatMapId: seatMap?.Id || null,
+          seatMapName: seatMap?.name || 'Untitled Seat Map',
+          exportDate: new Date().toISOString(),
+          exportVersion: '1.0',
+          totalSeats: seats.length,
+          totalZones: zones.length,
+          dimensions: seatMap?.dimensions || "800x600"
+        },
+        zones: zones.map(zone => ({
+          id: zone.id,
+          name: zone.name,
+          color: zone.color,
+          price: zone.price,
+          seatCount: seats.filter(seat => seat.zoneId === zone.id).length
+        })),
+        seats: seats.map(seat => {
+          const zone = zones.find(z => z.id === seat.zoneId);
+          return {
+            id: seat.id,
+            row: seat.row,
+            number: seat.number,
+            position: {
+              x: seat.x,
+              y: seat.y
+            },
+            zone: {
+              id: seat.zoneId,
+              name: zone?.name || 'Unknown Zone',
+              color: zone?.color || '#10b981',
+              price: zone?.price || 0
+            },
+            type: seat.type,
+            status: seat.status,
+            mapId: seat.mapId
+          };
+        }),
+        analytics: {
+          capacityByZone: zones.reduce((acc, zone) => {
+            acc[zone.name] = seats.filter(seat => seat.zoneId === zone.id).length;
+            return acc;
+          }, {}),
+          priceDistribution: zones.reduce((acc, zone) => {
+            const zoneSeats = seats.filter(seat => seat.zoneId === zone.id).length;
+            acc[zone.price] = (acc[zone.price] || 0) + zoneSeats;
+            return acc;
+          }, {}),
+          totalCapacity: seats.length,
+          averagePrice: zones.length > 0 ? 
+            zones.reduce((sum, zone) => {
+              const zoneSeats = seats.filter(seat => seat.zoneId === zone.id).length;
+              return sum + (zone.price * zoneSeats);
+            }, 0) / seats.length : 0,
+          seatTypes: seats.reduce((acc, seat) => {
+            acc[seat.type] = (acc[seat.type] || 0) + 1;
+            return acc;
+          }, {}),
+          zoneUtilization: zones.map(zone => ({
+            zoneName: zone.name,
+            capacity: seats.filter(seat => seat.zoneId === zone.id).length,
+            pricePoint: zone.price,
+            utilizationRate: seats.filter(seat => seat.zoneId === zone.id && seat.status === 'occupied').length / 
+              Math.max(seats.filter(seat => seat.zoneId === zone.id).length, 1)
+          }))
+        }
+      };
+
+      // Create and trigger download
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `seat_map_${seatMap?.name || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+URL.revokeObjectURL(url);
+
+      console.log('Seat map data exported successfully for analytics');
+    } catch (error) {
+      console.error('Error exporting seat map data:', error);
+      alert('Failed to export seat map data');
     }
   };
   return (
@@ -299,7 +389,7 @@ const handleCreateZone = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Actions</label>
-              <div className="space-y-2">
+<div className="space-y-2">
                 <Button
                   variant="primary"
                   onClick={handleSave}
@@ -307,6 +397,14 @@ const handleCreateZone = () => {
                 >
                   <ApperIcon name="Save" className="w-4 h-4 mr-2" />
                   Save Map
+                </Button>
+                <Button
+                  variant="accent"
+                  onClick={handleExportJSON}
+                  className="w-full"
+                >
+                  <ApperIcon name="Download" className="w-4 h-4 mr-2" />
+                  Export JSON
                 </Button>
                 <Button
                   variant="secondary"
