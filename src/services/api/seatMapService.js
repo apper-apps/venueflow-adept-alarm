@@ -1,5 +1,4 @@
 import { toast } from "react-toastify";
-import React from "react";
 
 class SeatMapService {
   constructor() {
@@ -221,10 +220,11 @@ if (successfulRecords.length > 0) {
         console.error(error.message);
       }
       return null;
-    }
 }
+  }
+
   async update(id, seatMapData) {
-try {
+    try {
 const params = {
         records: [
           {
@@ -372,8 +372,6 @@ async getTemplates() {
       }
       return [];
 }
-      return [];
-    }
   }
 
   async getZonesByMapId(mapId) {
