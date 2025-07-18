@@ -1,22 +1,24 @@
 import React, { useState } from "react";
-import Layout from "@/components/organisms/Layout";
-import SeatMapBuilder from "@/components/organisms/SeatMapBuilder";
-import SearchBar from "@/components/molecules/SearchBar";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
-import Card from "@/components/atoms/Card";
-import Button from "@/components/atoms/Button";
-import Badge from "@/components/atoms/Badge";
-import FormField from "@/components/molecules/FormField";
-import ApperIcon from "@/components/ApperIcon";
 import { useSeatMaps } from "@/hooks/useSeatMaps";
 import { useVenues } from "@/hooks/useVenues";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import ApperIcon from "@/components/ApperIcon";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
+import Layout from "@/components/organisms/Layout";
+import SeatMapBuilder from "@/components/organisms/SeatMapBuilder";
+import FormField from "@/components/molecules/FormField";
+import SearchBar from "@/components/molecules/SearchBar";
+import Seat from "@/components/molecules/Seat";
+import Card from "@/components/atoms/Card";
+import Badge from "@/components/atoms/Badge";
+import Button from "@/components/atoms/Button";
 import zoneService from "@/services/api/zoneService";
 import seatService from "@/services/api/seatService";
-
+import entryExitService from "@/services/api/entryExitService";
+import aisleService from "@/services/api/aisleService";
 const SeatMapsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMap, setSelectedMap] = useState(null);
@@ -89,7 +91,9 @@ const handleSeatMapBuilderSave = async (seatMapData) => {
     setFormData(prev => ({
       ...prev,
       zones: seatMapData.zones,
-      seats: seatMapData.seats
+      seats: seatMapData.seats,
+      entryExits: seatMapData.entryExits || [],
+      aisles: seatMapData.aisles || []
     }));
   };
 const handleSave = async () => {
@@ -112,17 +116,17 @@ const handleSave = async () => {
         const seatMapService = (await import("@/services/api/seatMapService")).default;
         savedSeatMap = await seatMapService.update(editingMap.Id, seatMapData);
         
-        // Update zones and seats
-        await saveZonesAndSeats(editingMap.Id, formData.zones, formData.seats);
+// Update zones, seats, entry/exits, and aisles
+        await saveZonesAndSeats(editingMap.Id, formData.zones, formData.seats, formData.entryExits, formData.aisles);
         
         toast.success("Seat map updated successfully");
       } else {
         const seatMapService = (await import("@/services/api/seatMapService")).default;
         savedSeatMap = await seatMapService.create(seatMapData);
         
-        if (savedSeatMap) {
-          // Save zones and seats with the new seat map ID
-          await saveZonesAndSeats(savedSeatMap.Id, formData.zones, formData.seats);
+if (savedSeatMap) {
+          // Save zones, seats, entry/exits, and aisles with the new seat map ID
+          await saveZonesAndSeats(savedSeatMap.Id, formData.zones, formData.seats, formData.entryExits, formData.aisles);
         }
         
         toast.success("Seat map created successfully");
@@ -137,12 +141,14 @@ const handleSave = async () => {
     }
   };
 
-  const saveZonesAndSeats = async (mapId, zones, seats) => {
+const saveZonesAndSeats = async (mapId, zones, seats, entryExits = [], aisles = []) => {
     try {
-      // Delete existing zones and seats for this map
+      // Delete existing data for this map
       await Promise.all([
         zoneService.deleteByMapId(mapId),
-        seatService.deleteByMapId(mapId)
+        seatService.deleteByMapId(mapId),
+        entryExitService.deleteByVenueId(mapId),
+        aisleService.deleteByMapId(mapId)
       ]);
 
       // Create new zones
@@ -175,8 +181,39 @@ const handleSave = async () => {
       if (seatsWithUpdatedZones.length > 0) {
         await seatService.createBulk(seatsWithUpdatedZones);
       }
+
+      // Create entry/exits
+      const entryExitPromises = entryExits.map(entryExit => 
+        entryExitService.create({
+          Name: entryExit.name,
+          venue_id: mapId,
+          x: entryExit.x,
+          y: entryExit.y,
+          capacity: entryExit.capacity
+        })
+      );
+      
+      if (entryExitPromises.length > 0) {
+        await Promise.all(entryExitPromises);
+      }
+
+      // Create aisles
+      const aislePromises = aisles.map(aisle => 
+        aisleService.create({
+          Name: aisle.name,
+          map_id: mapId,
+          x: aisle.x,
+          y: aisle.y,
+          width: aisle.width,
+          length: aisle.length
+        })
+      );
+      
+      if (aislePromises.length > 0) {
+        await Promise.all(aislePromises);
+      }
     } catch (error) {
-      console.error("Error saving zones and seats:", error);
+      console.error("Error saving seat map data:", error);
       throw error;
     }
   };

@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import entryExitService from "@/services/api/entryExitService";
+import aisleService from "@/services/api/aisleService";
 import ApperIcon from "@/components/ApperIcon";
 import Loading from "@/components/ui/Loading";
 import Seat from "@/components/molecules/Seat";
@@ -9,25 +11,44 @@ import Button from "@/components/atoms/Button";
 import zoneService from "@/services/api/zoneService";
 import seatService from "@/services/api/seatService";
 const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
-  const [selectedTool, setSelectedTool] = useState("seat");
+const [selectedTool, setSelectedTool] = useState("seat");
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [zones, setZones] = useState([]);
   const [seats, setSeats] = useState([]);
+  const [entryExits, setEntryExits] = useState([]);
+  const [aisles, setAisles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentZone, setCurrentZone] = useState(null);
   const [showZoneModal, setShowZoneModal] = useState(false);
   const [editingZone, setEditingZone] = useState(null);
+  const [showEntryExitModal, setShowEntryExitModal] = useState(false);
+  const [editingEntryExit, setEditingEntryExit] = useState(null);
+  const [showAisleModal, setShowAisleModal] = useState(false);
+  const [editingAisle, setEditingAisle] = useState(null);
   const [zoneFormData, setZoneFormData] = useState({
     name: "",
     color: "#10b981",
     price: 50
   });
+  const [entryExitFormData, setEntryExitFormData] = useState({
+    name: "",
+    capacity: 100,
+    x: 0,
+    y: 0
+  });
+  const [aisleFormData, setAisleFormData] = useState({
+    name: "",
+    width: 20,
+    length: 100,
+    x: 0,
+    y: 0
+  });
   const canvasRef = useRef(null);
 
-  // Load zones and seats when seatMap changes
+// Load zones, seats, entry/exits, and aisles when seatMap changes
   useEffect(() => {
     if (seatMap && seatMap.Id) {
-      loadZonesAndSeats();
+      loadSeatMapData();
     } else {
       // Set default zones for new seat maps
       setZones([
@@ -35,25 +56,31 @@ const SeatMapBuilder = ({ seatMap, onSave, readOnly = false }) => {
         { id: 2, name: "VIP", color: "#8b5cf6", price: 100 }
       ]);
       setCurrentZone(1);
+      setEntryExits([]);
+      setAisles([]);
     }
   }, [seatMap]);
 
-  const loadZonesAndSeats = async () => {
+const loadSeatMapData = async () => {
     setLoading(true);
     try {
-      const [zonesData, seatsData] = await Promise.all([
+      const [zonesData, seatsData, entryExitsData, aislesData] = await Promise.all([
         zoneService.getByMapId(seatMap.Id),
-        seatService.getByMapId(seatMap.Id)
+        seatService.getByMapId(seatMap.Id),
+        entryExitService.getByVenueId(seatMap.venueId || seatMap.Id),
+        aisleService.getByMapId(seatMap.Id)
       ]);
       
       setZones(zonesData);
       setSeats(seatsData);
+      setEntryExits(entryExitsData);
+      setAisles(aislesData);
       
       if (zonesData.length > 0) {
         setCurrentZone(zonesData[0].id);
       }
     } catch (error) {
-      console.error("Error loading zones and seats:", error);
+      console.error("Error loading seat map data:", error);
     } finally {
       setLoading(false);
     }
@@ -63,17 +90,19 @@ const tools = [
     { id: "seat", name: "Add Seat", icon: "Square" },
     { id: "row", name: "Add Row", icon: "Grid3X3" },
     { id: "zone", name: "Zone Paint", icon: "Palette" },
+    { id: "entry", name: "Entry/Exit", icon: "DoorOpen" },
+    { id: "aisle", name: "Aisle", icon: "Route" },
     { id: "select", name: "Select", icon: "MousePointer" },
     { id: "delete", name: "Delete", icon: "Trash2" }
   ];
-  const handleCanvasClick = (e) => {
+const handleCanvasClick = (e) => {
     if (readOnly) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-if (selectedTool === "seat" && currentZone) {
+    if (selectedTool === "seat" && currentZone) {
       const newSeat = {
         id: Date.now(),
         x: Math.round(x / 30) * 30,
@@ -86,6 +115,25 @@ if (selectedTool === "seat" && currentZone) {
         status: "available"
       };
       setSeats([...seats, newSeat]);
+    } else if (selectedTool === "entry") {
+      setEntryExitFormData({
+        name: `Entry ${entryExits.length + 1}`,
+        capacity: 100,
+        x: Math.round(x / 30) * 30,
+        y: Math.round(y / 30) * 30
+      });
+      setEditingEntryExit(null);
+      setShowEntryExitModal(true);
+    } else if (selectedTool === "aisle") {
+      setAisleFormData({
+        name: `Aisle ${aisles.length + 1}`,
+        width: 20,
+        length: 100,
+        x: Math.round(x / 30) * 30,
+        y: Math.round(y / 30) * 30
+      });
+      setEditingAisle(null);
+      setShowAisleModal(true);
     }
   };
 
@@ -105,6 +153,37 @@ const handleSeatClick = (seat) => {
           ? { ...s, zoneId: currentZone }
           : s
       ));
+    }
+  };
+
+  const handleEntryExitClick = (entryExit) => {
+    if (selectedTool === "delete") {
+      setEntryExits(prev => prev.filter(e => e.id !== entryExit.id));
+    } else if (selectedTool === "select") {
+      setEditingEntryExit(entryExit);
+      setEntryExitFormData({
+        name: entryExit.name || entryExit.Name,
+        capacity: entryExit.capacity,
+        x: entryExit.x,
+        y: entryExit.y
+      });
+      setShowEntryExitModal(true);
+    }
+  };
+
+  const handleAisleClick = (aisle) => {
+    if (selectedTool === "delete") {
+      setAisles(prev => prev.filter(a => a.id !== aisle.id));
+    } else if (selectedTool === "select") {
+      setEditingAisle(aisle);
+      setAisleFormData({
+        name: aisle.name || aisle.Name,
+        width: aisle.width,
+        length: aisle.length,
+        x: aisle.x,
+        y: aisle.y
+      });
+      setShowAisleModal(true);
     }
   };
 const generateRow = () => {
@@ -192,14 +271,62 @@ const handleCreateZone = () => {
       setZones(prev => [...prev, newZone]);
       setCurrentZone(newZone.id);
     }
+setShowZoneModal(false);
+  };
+  const handleEntryExitFormSubmit = async () => {
+    if (!entryExitFormData.name.trim()) {
+      alert("Please enter an entry/exit name");
+      return;
+    }
+
+    if (editingEntryExit) {
+      // Update existing entry/exit
+      setEntryExits(prev => prev.map(entryExit => 
+        entryExit.id === editingEntryExit.id 
+          ? { ...entryExit, ...entryExitFormData }
+          : entryExit
+      ));
+    } else {
+      // Create new entry/exit
+      const newEntryExit = {
+        id: Date.now(),
+        ...entryExitFormData
+      };
+      setEntryExits(prev => [...prev, newEntryExit]);
+    }
     
-    setShowZoneModal(false);
+    setShowEntryExitModal(false);
+  };
+
+  const handleAisleFormSubmit = async () => {
+    if (!aisleFormData.name.trim()) {
+      alert("Please enter an aisle name");
+      return;
+    }
+
+    if (editingAisle) {
+      // Update existing aisle
+      setAisles(prev => prev.map(aisle => 
+        aisle.id === editingAisle.id 
+          ? { ...aisle, ...aisleFormData }
+          : aisle
+      ));
+    } else {
+      // Create new aisle
+      const newAisle = {
+        id: Date.now(),
+        ...aisleFormData
+      };
+      setAisles(prev => [...prev, newAisle]);
+    }
+    
+    setShowAisleModal(false);
   };
 
 const handleSave = async () => {
     if (onSave) {
-      await onSave({ zones, seats });
-    }
+      await onSave({ zones, seats, entryExits, aisles });
+}
   };
 
   const handleExportJSON = () => {
@@ -453,8 +580,52 @@ URL.revokeObjectURL(url);
               </div>
             </div>
           ) : (
-            <>
-{seats.map((seat) => {
+<>
+              {/* Aisles */}
+              {aisles.map((aisle) => (
+                <div
+                  key={aisle.id}
+                  className="absolute bg-gray-600 opacity-50 border border-gray-500 cursor-pointer hover:opacity-70 transition-opacity"
+                  style={{ 
+                    left: aisle.x, 
+                    top: aisle.y,
+                    width: aisle.width,
+                    height: aisle.length
+                  }}
+                  onClick={() => handleAisleClick(aisle)}
+                  title={`${aisle.name || aisle.Name} - ${aisle.width}x${aisle.length}`}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs text-white font-bold transform rotate-90">
+                      {aisle.name || aisle.Name}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Entry/Exits */}
+              {entryExits.map((entryExit) => (
+                <div
+                  key={entryExit.id}
+                  className="absolute cursor-pointer hover:scale-110 transition-transform"
+                  style={{ left: entryExit.x, top: entryExit.y }}
+                  onClick={() => handleEntryExitClick(entryExit)}
+                  title={`${entryExit.name || entryExit.Name} - Capacity: ${entryExit.capacity}`}
+                >
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center border-2 border-blue-300">
+                    <ApperIcon name="DoorOpen" className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-400 font-bold whitespace-nowrap">
+                    {entryExit.name || entryExit.Name}
+                  </div>
+                  <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                    {entryExit.capacity}
+                  </div>
+                </div>
+              ))}
+
+              {/* Seats */}
+              {seats.map((seat) => {
                 const zone = zones.find(z => z.id === seat.zoneId);
                 const seatWithZone = {
                   ...seat,
@@ -479,11 +650,11 @@ URL.revokeObjectURL(url);
                 );
               })}
               
-              {seats.length === 0 && (
+              {seats.length === 0 && entryExits.length === 0 && aisles.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                   <div className="text-center">
                     <ApperIcon name="Grid3X3" className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Click to add seats or use tools above</p>
+                    <p>Click to add seats, entry/exits, or aisles using tools above</p>
                   </div>
                 </div>
               )}
@@ -491,9 +662,15 @@ URL.revokeObjectURL(url);
           )}
         </div>
 
-        <div className="mt-4 text-sm text-gray-400">
-          <p>Total Seats: {seats.length}</p>
-          <p>Selected: {selectedSeats.length}</p>
+<div className="mt-4 text-sm text-gray-400 grid grid-cols-2 gap-4">
+          <div>
+            <p>Total Seats: {seats.length}</p>
+            <p>Selected: {selectedSeats.length}</p>
+          </div>
+          <div>
+            <p>Entry/Exits: {entryExits.length}</p>
+            <p>Aisles: {aisles.length}</p>
+          </div>
         </div>
 </Card>
 
@@ -582,11 +759,214 @@ URL.revokeObjectURL(url);
                 {editingZone ? "Update Zone" : "Create Zone"}
               </Button>
             </div>
+</Card>
+        </div>
+      )}
+      {/* Entry/Exit Management Modal */}
+      {showEntryExitModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                {editingEntryExit ? "Edit Entry/Exit" : "Create Entry/Exit"}
+              </h3>
+              <Button variant="ghost" onClick={() => setShowEntryExitModal(false)}>
+                <ApperIcon name="X" className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Entry/Exit Name
+                </label>
+                <Input
+                  value={entryExitFormData.name}
+                  onChange={(e) => setEntryExitFormData(prev => ({
+                    ...prev,
+                    name: e.target.value
+                  }))}
+                  placeholder="Enter entry/exit name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Capacity
+                </label>
+                <Input
+                  type="number"
+                  value={entryExitFormData.capacity}
+                  onChange={(e) => setEntryExitFormData(prev => ({
+                    ...prev,
+                    capacity: parseInt(e.target.value) || 0
+                  }))}
+                  placeholder="Enter capacity"
+                  min="1"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    X Position
+                  </label>
+                  <Input
+                    type="number"
+                    value={entryExitFormData.x}
+                    onChange={(e) => setEntryExitFormData(prev => ({
+                      ...prev,
+                      x: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="X"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Y Position
+                  </label>
+                  <Input
+                    type="number"
+                    value={entryExitFormData.y}
+                    onChange={(e) => setEntryExitFormData(prev => ({
+                      ...prev,
+                      y: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="Y"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4 mt-6">
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowEntryExitModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleEntryExitFormSubmit}
+              >
+                {editingEntryExit ? "Update Entry/Exit" : "Create Entry/Exit"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Aisle Management Modal */}
+      {showAisleModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                {editingAisle ? "Edit Aisle" : "Create Aisle"}
+              </h3>
+              <Button variant="ghost" onClick={() => setShowAisleModal(false)}>
+                <ApperIcon name="X" className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Aisle Name
+                </label>
+                <Input
+                  value={aisleFormData.name}
+                  onChange={(e) => setAisleFormData(prev => ({
+                    ...prev,
+                    name: e.target.value
+                  }))}
+                  placeholder="Enter aisle name"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Width
+                  </label>
+                  <Input
+                    type="number"
+                    value={aisleFormData.width}
+                    onChange={(e) => setAisleFormData(prev => ({
+                      ...prev,
+                      width: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="Width"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Length
+                  </label>
+                  <Input
+                    type="number"
+                    value={aisleFormData.length}
+                    onChange={(e) => setAisleFormData(prev => ({
+                      ...prev,
+                      length: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="Length"
+                    min="1"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    X Position
+                  </label>
+                  <Input
+                    type="number"
+                    value={aisleFormData.x}
+                    onChange={(e) => setAisleFormData(prev => ({
+                      ...prev,
+                      x: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="X"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Y Position
+                  </label>
+                  <Input
+                    type="number"
+                    value={aisleFormData.y}
+                    onChange={(e) => setAisleFormData(prev => ({
+                      ...prev,
+                      y: parseInt(e.target.value) || 0
+                    }))}
+                    placeholder="Y"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4 mt-6">
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowAisleModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleAisleFormSubmit}
+              >
+                {editingAisle ? "Update Aisle" : "Create Aisle"}
+              </Button>
+            </div>
           </Card>
         </div>
       )}
     </div>
-  );
 };
 
 export default SeatMapBuilder;

@@ -15,6 +15,7 @@ const useKeyboardShortcuts = () => {
       if (!isCtrlOrCmd) return;
 
       // Prevent default for our shortcuts
+// Prevent default for our shortcuts
       const shortcuts = {
         'Digit1': () => navigate('/'),
         'Digit2': () => navigate('/events'),
@@ -31,7 +32,7 @@ const useKeyboardShortcuts = () => {
           else if (path.includes('/venues')) navigate('/venues/new');
           else if (path.includes('/seat-maps')) navigate('/seat-maps/new');
           else navigate('/events/new');
-},
+        },
         'KeyS': () => {
           // Trigger save action if available
           const saveEvent = new window.CustomEvent('keyboardSave');
@@ -57,7 +58,17 @@ const useKeyboardShortcuts = () => {
           // Navigate to dashboard (home)
           navigate('/');
         },
-        'Slash': () => {
+        'KeyR': () => {
+          // Trigger entry/exit tool in seat map builder
+          const entryExitEvent = new window.CustomEvent('keyboardEntryExit');
+          window.dispatchEvent(entryExitEvent);
+        },
+        'KeyI': () => {
+          // Trigger aisle tool in seat map builder
+          const aisleEvent = new window.CustomEvent('keyboardAisle');
+          window.dispatchEvent(aisleEvent);
+        },
+'Slash': () => {
           // Toggle help modal
           setShowHelp(prev => !prev);
         }
@@ -73,7 +84,7 @@ const useKeyboardShortcuts = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, toggleTheme]);
 
-  const shortcuts = [
+const shortcuts = [
     { keys: 'Ctrl + 1', description: 'Go to Dashboard' },
     { keys: 'Ctrl + 2', description: 'Go to Events' },
     { keys: 'Ctrl + 3', description: 'Go to Venues' },
@@ -89,6 +100,8 @@ const useKeyboardShortcuts = () => {
     { keys: 'Ctrl + M', description: 'Go to Seat Maps' },
     { keys: 'Ctrl + A', description: 'Go to Analytics' },
     { keys: 'Ctrl + H', description: 'Go to Dashboard' },
+    { keys: 'Ctrl + R', description: 'Entry/Exit Tool (Seat Map)' },
+    { keys: 'Ctrl + I', description: 'Aisle Tool (Seat Map)' },
     { keys: 'Ctrl + ?', description: 'Show Keyboard Shortcuts' }
   ];
 
