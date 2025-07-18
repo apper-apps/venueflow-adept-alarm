@@ -165,20 +165,19 @@ return response.data?.map(seatMap => ({
   }
 
   async create(seatMapData) {
-    try {
+try {
 const params = {
         records: [
           {
             Name: seatMapData.name,
             Tags: seatMapData.tags || "",
             is_template: seatMapData.isTemplate || false,
-            venue_id: seatMapData.venueId || null,
+            ...(seatMapData.venueId && !isNaN(parseInt(seatMapData.venueId)) ? { venue_id: parseInt(seatMapData.venueId) } : {}),
             dimensions: seatMapData.dimensions || "800x600",
             created_at: new Date().toISOString()
           }
         ]
       };
-
       const response = await this.apperClient.createRecord(this.tableName, params);
 
       if (!response.success) {
@@ -226,7 +225,7 @@ if (successfulRecords.length > 0) {
   }
 
   async update(id, seatMapData) {
-    try {
+try {
 const params = {
         records: [
           {
@@ -234,12 +233,11 @@ const params = {
             Name: seatMapData.name,
             Tags: seatMapData.tags || "",
             is_template: seatMapData.isTemplate,
-            venue_id: seatMapData.venueId,
+            ...(seatMapData.venueId && !isNaN(parseInt(seatMapData.venueId)) ? { venue_id: parseInt(seatMapData.venueId) } : {}),
             dimensions: seatMapData.dimensions || "800x600"
           }
         ]
       };
-
       const response = await this.apperClient.updateRecord(this.tableName, params);
 
       if (!response.success) {
